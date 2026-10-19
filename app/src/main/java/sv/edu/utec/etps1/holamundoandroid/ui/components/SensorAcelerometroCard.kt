@@ -1,17 +1,17 @@
 /*
- * ============================================================================
- * CONTROL DE VERSIONES
- * ============================================================================
- * Estado           : NUEVO
- * Archivo          : SensorAcelerometroCard.kt
- * Ruta             : app/src/main/java/sv/edu/utec/etps1/holamundoandroid/ui/components/SensorAcelerometroCard.kt
- * Versión          : V0.1
- * Fecha            : 2026-10-11
- * Propósito Técnico: Componente reutilizable en Jetpack Compose para la lectura
- *                    y visualización en tiempo real de las coordenadas triaxiales
- *                    (X, Y, Z) del sensor de acelerómetro (Sensor.TYPE_ACCELEROMETER)
- *                    gestionando de forma segura el ciclo de vida con DisposableEffect.
- * ============================================================================
+- ============================================================================
+- CONTROL DE VERSIONES
+- ============================================================================
+- Estado           : ACTUALIZACIÓN / INTEGRACIÓN SEMANA 12
+- Archivo          : SensorAcelerometroCard.kt
+- Ruta             : app/src/main/java/sv/edu/utec/etps1/holamundoandroid/ui/components/SensorAcelerometroCard.kt
+- Versión          : V0.2
+- Fecha            : 2026-10-18
+- Propósito Técnico: Componente modular de diagnóstico del hardware (Acelerómetro).
+-                    Comprueba disponibilidad, escucha eventos de movimiento con
+-                    SensorEventListener, controla el ciclo de vida mediante
+-                    DisposableEffect y presenta telemetría con interpretación visible.
+- ============================================================================
  */
 
 package sv.edu.utec.etps1.holamundoandroid.ui.components
@@ -21,22 +21,24 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
-import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Sensors
+import androidx.compose.material.icons.filled.SensorsOff
+import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -52,7 +54,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import java.util.Locale
+import kotlin.math.sqrt
 
 @Composable
 fun SensorAcelerometroCard(
@@ -60,148 +62,146 @@ fun SensorAcelerometroCard(
 ) {
     val context = LocalContext.current
 
-    // Obtención del SensorManager desde el Contexto del sistema
-    val sensorManager = remember {
-        context.getSystemService(Context.SENSOR_SERVICE) as? SensorManager
-    }
+    // Estados reactivos para Compose
+    var sensorDisponible by remember { mutableStateOf(true) }
+    var mensajeInterpretativo by remember { mutableStateOf("Esperando lectura del sensor...") }
+    var colorInterpretacion by remember { mutableStateOf(Color(0xFF1976D2)) }
 
-    // Referencia al sensor físico de acelerómetro
-    val acelerometro = remember(sensorManager) {
-        sensorManager?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
-    }
+    var valorX by remember { mutableFloatStateOf(0f) }
+    var valorY by remember { mutableFloatStateOf(0f) }
+    var valorZ by remember { mutableFloatStateOf(0f) }
 
-    // Estados reactivos para almacenar las coordenadas triaxiales
-    var ejeX by remember { mutableFloatStateOf(0f) }
-    var ejeY by remember { mutableFloatStateOf(0f) }
-    var ejeZ by remember { mutableFloatStateOf(0f) }
-    var sensorDisponible by remember { mutableStateOf(acelerometro != null) }
+    // Control del ciclo de vida y escucha con DisposableEffect
+    DisposableEffect(Unit) {
+        val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as? SensorManager
+        val acelerometro = sensorManager?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
 
-    // ========================================================================
-    // GESTIÓN DEL CICLO DE VIDA DEL SENSOR CON DISPOSABLEEFFECT
-    // ========================================================================
-    DisposableEffect(sensorManager, acelerometro) {
-        val listener = object : SensorEventListener {
-            override fun onSensorChanged(event: SensorEvent?) {
-                if (event?.sensor?.type == Sensor.TYPE_ACCELEROMETER) {
-                    ejeX = event.values[0]
-                    ejeY = event.values[1]
-                    ejeZ = event.values[2]
+        if (sensorManager == null || acelerometro == null) {
+            sensorDisponible = false
+            mensajeInterpretativo = "Acelerómetro no disponible en este hardware/emulador."
+            colorInterpretacion = Color(0xFFC62828)
+            onDispose { }
+        } else {
+            val listener = object : SensorEventListener {
+                override fun onSensorChanged(event: SensorEvent) {
+                    val x = event.values[0]
+                    val y = event.values[1]
+                    val z = event.values[2]
+
+                    valorX = x
+                    valorY = y
+                    valorZ = z
+
+                    // Magnitud vectorial: sqrt(x^2 + y^2 + z^2)
+                    // Gravedad estándar en reposo ~ 9.81 m/s^2
+                    val aceleracionTotal = sqrt((x * x + y * y + z * z).toDouble())
+
+                    // Interpretación textual contextual según la intensidad
+                    when {
+                        aceleracionTotal > 14.5 -> {
+                            mensajeInterpretativo = "¡Movimiento brusco / sacudida detectada!"
+                            colorInterpretacion = Color(0xFFC62828) // Rojo
+                        }
+                        aceleracionTotal < 6.5 -> {
+                            mensajeInterpretativo = "Dispositivo en movimiento descendente / caída libre"
+                            colorInterpretacion = Color(0xFFEF6C00) // Naranja
+                        }
+                        else -> {
+                            mensajeInterpretativo = "Dispositivo estable / en reposo"
+                            colorInterpretacion = Color(0xFF2E7D32) // Verde
+                        }
+                    }
                 }
+
+                override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
             }
 
-            override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-                // Sin acción requerida para cambio de precisión
-            }
-        }
-
-        if (acelerometro != null) {
-            sensorDisponible = true
-            sensorManager?.registerListener(
+            // Registrar con frecuencia UI
+            sensorManager.registerListener(
                 listener,
                 acelerometro,
                 SensorManager.SENSOR_DELAY_UI
             )
-        } else {
-            sensorDisponible = false
-        }
 
-        // Limpieza segura del listener al destruir o desvincular el Composable
-        onDispose {
-            sensorManager?.unregisterListener(listener)
+            // Liberación obligatoria para evitar fugas de memoria y drenaje de batería
+            onDispose {
+                sensorManager.unregisterListener(listener)
+            }
         }
     }
 
-    // ========================================================================
-    // TARJETA VISUAL DEL ACELERÓMETRO (MATERIAL 3)
-    // ========================================================================
+    // Tarjeta visual del Tablero de Diagnóstico
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFF3E5F5) // Tono púrpura suave adaptado al tema
+            containerColor = Color(0xFFF7F4F6)
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        border = BorderStroke(1.dp, Color(0xFFE0D3D8))
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            // ENCABEZADO DE LA TARJETA
+            // Encabezado del módulo
             Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    imageVector = Icons.Default.Sensors,
-                    contentDescription = "Sensor Acelerómetro",
-                    tint = Color(0xFF5A1533)
+                    imageVector = if (sensorDisponible) Icons.Default.Sensors else Icons.Default.SensorsOff,
+                    contentDescription = "Diagnóstico Sensor",
+                    tint = if (sensorDisponible) Color(0xFF5A1533) else Color.Gray,
+                    modifier = Modifier.size(20.dp)
                 )
-
                 Spacer(modifier = Modifier.width(8.dp))
-
                 Text(
-                    text = "Acelerómetro en Tiempo Real",
-                    style = MaterialTheme.typography.titleMedium,
+                    text = "Diagnóstico del dispositivo",
                     fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
                     color = Color(0xFF5A1533)
                 )
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 4.dp),
+                thickness = 0.8.dp,
+                color = Color(0xFFE0D3D8)
+            )
 
-            if (sensorDisponible) {
-                // LECTURA DE COORDENADAS TRIAXIALES
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    CoordenadaItem(label = "Eje X", valor = ejeX, colorBg = Color(0xFFFFEBEE), colorText = Color(0xFFC62828))
-                    CoordenadaItem(label = "Eje Y", valor = ejeY, colorBg = Color(0xFFE8F5E9), colorText = Color(0xFF2E7D32))
-                    CoordenadaItem(label = "Eje Z", valor = ejeZ, colorBg = Color(0xFFE3F2FD), colorText = Color(0xFF1565C0))
-                }
-            } else {
+            if (!sensorDisponible) {
                 Text(
-                    text = "⚠️ El sensor de acelerómetro no está disponible en este dispositivo.",
-                    color = Color(0xFFC62828),
+                    text = mensajeInterpretativo,
+                    color = colorInterpretacion,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium
                 )
+            } else {
+                // Lectura numérica de coordenadas
+                Text(
+                    text = String.format("Acelerómetro: X: %.2f | Y: %.2f | Z: %.2f m/s²", valorX, valorY, valorZ),
+                    fontSize = 11.sp,
+                    color = Color.DarkGray
+                )
+
+                // Interpretación en lenguaje natural
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Vibration,
+                        contentDescription = "Estado dinámico",
+                        tint = colorInterpretacion,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "Estado: $mensajeInterpretativo",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = colorInterpretacion
+                    )
+                }
             }
         }
-    }
-}
-
-@Composable
-private fun CoordenadaItem(
-    label: String,
-    valor: Float,
-    colorBg: Color,
-    colorText: Color
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .background(color = colorBg, shape = RoundedCornerShape(8.dp))
-            .padding(horizontal = 12.dp, vertical = 8.dp)
-    ) {
-        Text(
-            text = label,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Bold,
-            color = colorText
-        )
-        Spacer(modifier = Modifier.height(2.dp))
-        Text(
-            text = String.format(Locale.US, "%.2f", valor),
-            fontSize = 14.sp,
-            fontWeight = FontWeight.ExtraBold,
-            color = Color.Black
-        )
-        Text(
-            text = "m/s²",
-            fontSize = 9.sp,
-            color = Color.Gray
-        )
     }
 }

@@ -1,3 +1,18 @@
+/*
+- ============================================================================
+- CONTROL DE VERSIONES
+- ============================================================================
+- Estado           : MODIFICACIÓN / INTEGRACIÓN SEMANA 12
+- Archivo          : RegistroIncidenciasActivity.kt
+- Ruta             : app/src/main/java/sv/edu/utec/etps1/holamundoandroid/RegistroIncidenciasActivity.kt
+- Versión          : V0.12
+- Fecha            : 2026-10-18
+- Propósito Técnico: Formulario de registro de incidencias IT con validaciones,
+-                    modal de confirmación e integración de tablero de diagnóstico
+-                    de hardware (Acelerómetro) para la Semana 12.
+- ============================================================================
+ */
+
 package sv.edu.utec.etps1.holamundoandroid
 
 import android.app.Activity
@@ -13,7 +28,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.CheckCircle
@@ -40,6 +58,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import sv.edu.utec.etps1.holamundoandroid.ui.components.SensorAcelerometroCard
 import sv.edu.utec.etps1.holamundoandroid.ui.theme.HolaMundoAndroidTheme
 
 class RegistroIncidenciasActivity : ComponentActivity() {
@@ -77,12 +96,16 @@ fun RegistroIncidenciasApp() {
     var descripcionProblem by remember { mutableStateOf("") }
     var mostrarDialogo by remember { mutableStateOf(false) }
 
+    val scrollState = rememberScrollState()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .statusBarsPadding()
+            .verticalScroll(scrollState)
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Top
     ) {
 
         // ==================================================
@@ -106,7 +129,14 @@ fun RegistroIncidenciasApp() {
             text = "Gracias por comunicarte con IT, ¿en qué podemos ayudarte?",
             fontSize = 13.sp,
             color = Color.Gray,
-            modifier = Modifier.padding(top = 4.dp, bottom = 16.dp)
+            modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
+        )
+
+        // ==================================================
+        // TABLERO DE DIAGNÓSTICO: SENSOR ACELERÓMETRO (SEMANA 12)
+        // ==================================================
+        SensorAcelerometroCard(
+            modifier = Modifier.padding(bottom = 16.dp)
         )
 
         // ==================================================
@@ -206,7 +236,7 @@ fun RegistroIncidenciasApp() {
     // ======================================================
     if (mostrarDialogo) {
         AlertDialog(
-            onDismissRequest = { /* No permite cerrar tocando fuera */ },
+            onDismissRequest = { /* Modal bloqueante */ },
             icon = {
                 Icon(
                     imageVector = Icons.Default.CheckCircle,
@@ -232,7 +262,7 @@ fun RegistroIncidenciasApp() {
                 TextButton(
                     onClick = {
                         mostrarDialogo = false
-                        activity?.finish() // Finaliza la actividad actual para regresar a MainActivity
+                        activity?.finish()
                     }
                 ) {
                     Text(
