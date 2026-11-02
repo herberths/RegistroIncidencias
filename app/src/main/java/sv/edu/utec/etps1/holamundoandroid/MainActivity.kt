@@ -1,22 +1,23 @@
 /*
- * ============================================================================
- * CONTROL DE VERSIONES
- * ============================================================================
- * Estado           : MODIFICACIÓN
- * Archivo          : MainActivity.kt
- * Ruta             : app/src/main/java/sv/edu/utec/etps1/holamundoandroid/MainActivity.kt
- * Versión          : V0.2
- * Fecha            : 2026-10-11
- * Propósito Técnico: Pantalla principal de presentación de datos académicos del
- *                    estudiante con botón de navegación y etiqueta de versión
- *                    de compilación (VRSN 0.2 11102026 1245).
- * ============================================================================
- */
-
+* ============================================================================
+* CONTROL DE VERSIONES
+* ============================================================================
+* Estado           : MODIFICACIÓN
+* Archivo          : MainActivity.kt
+* Ruta             : app/src/main/java/sv/edu/utec/etps1/holamundoandroid/MainActivity.kt
+* Versión anterior : V0.3
+* Nueva versión    : V0.4
+* Fecha            : 2026-11-02
+* Propósito Técnico: Instrumentación de callbacks del ciclo de vida de la Activity
+*                    con Log.d bajo la etiqueta TPIS1_LIFECYCLE para la bitácora
+*                    evaluada de la Semana 14.
+* ============================================================================
+*/
 package sv.edu.utec.etps1.holamundoandroid
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
@@ -48,8 +49,11 @@ import sv.edu.utec.etps1.holamundoandroid.ui.theme.HolaMundoAndroidTheme
 
 class MainActivity : ComponentActivity() {
 
+    private val tag = "TPIS1_LIFECYCLE"
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Log.d(tag, "onCreate: Activity creada e inicializando UI")
 
         setContent {
             HolaMundoAndroidTheme {
@@ -62,6 +66,31 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    override fun onStart() {
+        super.onStart()
+        Log.d(tag, "onStart: Activity visible para el usuario")
+    }
+
+    override fun onResume() {
+        super.onResume()
+        Log.d(tag, "onResume: Activity en primer plano y lista para interactuar")
+    }
+
+    override fun onPause() {
+        Log.d(tag, "onPause: Activity perdiendo foco o pasando a segundo plano")
+        super.onPause()
+    }
+
+    override fun onStop() {
+        Log.d(tag, "onStop: Activity oculta, en segundo plano")
+        super.onStop()
+    }
+
+    override fun onDestroy() {
+        Log.d(tag, "onDestroy: Activity destruida, liberando memoria del sistema")
+        super.onDestroy()
+    }
 }
 
 @Composable
@@ -73,21 +102,14 @@ fun PantallaPrincipal() {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-
-        // ==================================================
         // MATERIA
-        // ==================================================
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
                 imageVector = Icons.Default.MenuBook,
                 contentDescription = "Materia",
                 tint = Color(0xFFFFD54F)
             )
-
             Spacer(modifier = Modifier.width(8.dp))
-
             Text(
                 text = "Materia: ETPS1",
                 color = Color.White,
@@ -97,20 +119,14 @@ fun PantallaPrincipal() {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // ==================================================
         // ALUMNO
-        // ==================================================
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
                 imageVector = Icons.Default.Person,
                 contentDescription = "Alumno",
                 tint = Color(0xFF81D4FA)
             )
-
             Spacer(modifier = Modifier.width(8.dp))
-
             Text(
                 text = "Alumno: Herberth Segovia",
                 color = Color.White,
@@ -120,20 +136,14 @@ fun PantallaPrincipal() {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // ==================================================
         // CARNET
-        // ==================================================
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
                 imageVector = Icons.Default.Badge,
                 contentDescription = "Carnet",
                 tint = Color(0xFFA5D6A7)
             )
-
             Spacer(modifier = Modifier.width(8.dp))
-
             Text(
                 text = "Carnet: 2930342021",
                 color = Color.White,
@@ -143,9 +153,7 @@ fun PantallaPrincipal() {
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // ==================================================
-        // BOTÓN REGISTRO DE INCIDENCIAS
-        // ==================================================
+        // BOTÓN NAVEGACIÓN
         Button(
             onClick = {
                 val intent = Intent(
@@ -160,21 +168,15 @@ fun PantallaPrincipal() {
                 contentDescription = "Registro de incidencias",
                 tint = Color.White
             )
-
             Spacer(modifier = Modifier.width(8.dp))
-
-            Text(
-                text = "Registro incidencias"
-            )
+            Text(text = "Registro incidencias")
         }
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // ==================================================
-        // VERSIÓN Y FECHA DE COMPILACIÓN
-        // ==================================================
+        // VERSIÓN ACTUALIZADA
         Text(
-            text = "VRSN 0.3 18102026 2000",
+            text = "VRSN 0.4 02112026 1640",
             color = Color.White.copy(alpha = 0.7f),
             fontSize = 12.sp,
             fontWeight = FontWeight.Medium
@@ -186,9 +188,7 @@ fun PantallaPrincipal() {
 @Composable
 fun PantallaPrincipalPreview() {
     HolaMundoAndroidTheme {
-        Surface(
-            color = Color(0xFF5A1533)
-        ) {
+        Surface(color = Color(0xFF5A1533)) {
             PantallaPrincipal()
         }
     }
