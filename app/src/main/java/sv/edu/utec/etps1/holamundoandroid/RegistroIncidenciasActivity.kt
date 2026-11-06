@@ -2,14 +2,13 @@
 - ============================================================================
 - CONTROL DE VERSIONES
 - ============================================================================
-- Estado           : MODIFICACIÓN / INTEGRACIÓN SEMANA 12
+- Estado           : MODIFICACIÓN / INTEGRACIÓN SEMANA 15
 - Archivo          : RegistroIncidenciasActivity.kt
 - Ruta             : app/src/main/java/sv/edu/utec/etps1/holamundoandroid/RegistroIncidenciasActivity.kt
-- Versión          : V0.12
-- Fecha            : 2026-10-18
-- Propósito Técnico: Formulario de registro de incidencias IT con validaciones,
--                    modal de confirmación e integración de tablero de diagnóstico
--                    de hardware (Acelerómetro) para la Semana 12.
+- Versión          : V0.13
+- Fecha            : 2026-11-05
+- Propósito Técnico: Conservación del estado de la interfaz (campos y diálogo)
+-                    ante la recreación de la Activity (rotación) usando rememberSaveable.
 - ============================================================================
  */
 
@@ -49,6 +48,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable // <-- IMPORT AGREGADO
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -90,11 +90,11 @@ fun RegistroIncidenciasApp() {
     val maxDescripcion = 200
 
     // ======================================================
-    // ESTADOS LOCALES DE CAMPOS Y DIÁLOGO
+    // ESTADOS LOCALES DE CAMPOS Y DIÁLOGO (SEMANA 15)
     // ======================================================
-    var tituloProblem by remember { mutableStateOf("") }
-    var descripcionProblem by remember { mutableStateOf("") }
-    var mostrarDialogo by remember { mutableStateOf(false) }
+    var tituloProblem by rememberSaveable { mutableStateOf("") }
+    var descripcionProblem by rememberSaveable { mutableStateOf("") }
+    var mostrarDialogo by rememberSaveable { mutableStateOf(false) }
 
     val scrollState = rememberScrollState()
 
